@@ -1,5 +1,4 @@
-# dialogueUncertainty
-research in progress about a dialogue uncertainty
+# BERT-based Ranker
 
 - selection_model.py: Selection Model
 - train_bert_selection.py: Training the bert ranker model

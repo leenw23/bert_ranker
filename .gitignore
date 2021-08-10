@@ -1,4 +1,4 @@
-*.txt
+# *.txt
 *.png
 .ipynb_checkpoints/
 img/
