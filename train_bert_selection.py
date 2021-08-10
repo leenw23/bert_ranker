@@ -48,13 +48,8 @@ def main(args):
     raw_dd_train, raw_dd_dev = get_dd_corpus("train"), get_dd_corpus("valid")
 
     print("Load begin!")
-    if args.uw_unk_ratio != 0.0:
-        with open(args.uw_unk_dump_fname.format(args.uw_unk_ratio, "train"), "rb") as f:
-            unk_train_dump = pickle.load(f)
-        with open(args.uw_unk_dump_fname.format(args.uw_unk_ratio, "dev"), "rb") as f:
-            unk_dev_dump = pickle.load(f)
-    else:
-        unk_train_dump, unk_dev_dump = None, None
+    
+    train_dump, dev_dump = None, None
 
     train_dataset = SelectionDataset(
         raw_dd_train,
@@ -64,9 +59,8 @@ def main(args):
         args.retrieval_candidate_num,
         UTTR_TOKEN,
         "./data/selection/text_cand{}".format(args.retrieval_candidate_num) + "_{}.pck",
-        "./data/selection/tensor_cand{}".format(args.retrieval_candidate_num)
-        + "_{}.pck",
-        corrupted_context_dataset=unk_train_dump,
+        "./data/selection/tensor_cand{}".format(args.retrieval_candidate_num) + "_{}.pck",
+        corrupted_context_dataset=train_dump,
     )
 
     dev_dataset = SelectionDataset(
@@ -77,9 +71,8 @@ def main(args):
         args.retrieval_candidate_num,
         UTTR_TOKEN,
         "./data/selection/text_cand{}".format(args.retrieval_candidate_num) + "_{}.pck",
-        "./data/selection/tensor_cand{}".format(args.retrieval_candidate_num)
-        + "_{}.pck",
-        corrupted_context_dataset=unk_dev_dump,
+        "./data/selection/tensor_cand{}".format(args.retrieval_candidate_num) + "_{}.pck",
+        corrupted_context_dataset=dev_dump,
     )
     print("Load end!")
 
@@ -172,35 +165,23 @@ def main(args):
             print(err)
         save_model(model, epoch, args.model_path)
 
-
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Process some integers.")
     parser.add_argument(
         "--exp_name",
         type=str,
-        default="select_batch12_candi10",  # "uw0.2_ratio0.5_select_batch12_candi8",
+        default="select_batch12_candi2",
     )
     parser.add_argument("--log_path", type=str, default="logs")
     parser.add_argument("--batch_size", type=int, default=12)
     parser.add_argument("--lr", type=float, default=2e-5)
-    parser.add_argument("--epoch", type=int, default=3)
+    parser.add_argument("--epoch", type=int, default=5)
     parser.add_argument(
         "--retrieval_candidate_num",
         type=int,
-        default=10,
+        default=2,
         help="Number of candidates including golden",
-    )
-    parser.add_argument(
-        "--uw_unk_ratio",
-        type=float,
-        default=0.0,
-        choices=[0.0, 0.1, 0.2, 0.3, 0.4, 0.5],
-    )
-    parser.add_argument(
-        "--uw_unk_dump_fname",
-        type=str,
-        default="./attention/UW_attention_change{}_{}.pck",
     )
     parser.add_argument(
         "--random_initialization", type=str, default="False", choices=["True", "False"]

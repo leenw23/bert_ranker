@@ -19,10 +19,10 @@ def get_dd_corpus(setname):
     blended_fname = "./data/blended_skill_talk/{}/{}.txt".format(setname, setname)
     assert os.path.exists(daily_fname) & os.path.exists(blended_fname)
     
-    with open(daily_fname, "r", encoding='UTF8') as f:
-        daily_ls = [el.strip() for el in f.readlines()]
-        with open(blended_fname, "r", encoding='UTF8') as f:
-            blended_ls = [el.strip() for el in f.readlines()]
+    with open(daily_fname, "r", encoding='UTF8') as f_d:
+        daily_ls = [el.strip() for el in f_d.readlines()]
+        with open(blended_fname, "r", encoding='UTF8') as f_b:
+            blended_ls = [el.strip() for el in f_b.readlines()]
             ls = daily_ls + blended_ls
             for idx, line in enumerate(ls):
                 line = [
