@@ -19,9 +19,8 @@ from transformers import BertConfig, BertModel, BertTokenizer
 
 from preprocess_dataset import get_dd_corpus
 from selection_model import BertSelect
-from utils import (RankerDataset, SelectionDataset, dump_config,
-                   get_uttr_token, load_model, save_model, set_random_seed,
-                   write2tensorboard)
+from utils import (SelectionDataset, dump_config, get_uttr_token,
+                   load_model, save_model, set_random_seed, write2tensorboard)
 
 
 def main(args):
@@ -171,7 +170,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--exp_name",
         type=str,
-        default="select_batch12_candi2",
+        default="select_batch12_candi2_test",
     )
     parser.add_argument("--log_path", type=str, default="logs")
     parser.add_argument("--batch_size", type=int, default=12)

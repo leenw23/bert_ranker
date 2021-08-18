@@ -4,6 +4,7 @@ import pickle
 from pprint import pprint
 from string import ascii_uppercase
 
+# pip install uncertainty-calibration
 import calibration as cal
 import numpy as np
 from sklearn.metrics import brier_score_loss, confusion_matrix, f1_score
@@ -12,7 +13,7 @@ from sklearn.metrics import precision_recall_fscore_support as score_metric
 from utils import brier_multi, recall_x_at_k
 
 
-def main_script(dirname):
+def main_script(dirname, num_candidates):
     dirlist = os.listdir(dirname)
     dirlist = sorted([os.path.join(dirname, el) for el in dirlist])
     result = {}
@@ -27,22 +28,23 @@ def main_script(dirname):
         flist = sorted(flist)
 
         for fname in flist:
-            assert "candi" in fname
-            recall, ece, brier = main(fname)
-            done = False
-            for modelname in ["select", "temp", "mcdrop", "ensemble"]:
-                if modelname in fname:
-                    done = True
-                    break
-            if not done:
-                raise ValueError
-            assert "test" in fname or "dev" in fname
-            if "dev" in fname:
-                print("$$ DEV  $$")
-                print(modelname)
-                print(recall, ece, brier)
-                print("\n")
-                continue
+            if str(num_candidates) in fname:
+                assert "candi" in fname
+                recall, ece, brier = main(fname, num_candidates)
+                done = False
+                for modelname in ["select", "temp", "mcdrop", "ensemble"]:
+                    if modelname in fname:
+                        done = True
+                        break
+                if not done:
+                    raise ValueError
+                assert "test" in fname or "dev" in fname
+                if "dev" in fname:
+                    print("$$ DEV  $$")
+                    print(modelname)
+                    print(recall, ece, brier)
+                    print("\n")
+                    continue
 
             result[exp_dir][modelname] = {"recall": recall, "ece": ece, "brier": brier}
 
@@ -51,7 +53,6 @@ def main_script(dirname):
     wb = Workbook()
     ws = wb.active
 
-    ws["A1"] = "UW-token"
     ws["B1"] = "Select"
     ws["E1"] = "Temp"
     ws["H1"] = "MCDrop"
@@ -69,9 +70,9 @@ def main_script(dirname):
             ws[ascii_uppercase[column_index + 1] + str(count)] = model_result["ece"]
             ws[ascii_uppercase[column_index + 2] + str(count)] = model_result["brier"]
         count += 1
-    wb.save("a.xlsx")
+    wb.save("result/performance/performance_{}.xlsx".format(num_candidates))
 
-    with open("dump_result.json", "w") as f:
+    with open("result/dump_result_{}.json".format(num_candidates), "w") as f:
         json.dump(result, f)
 
 
@@ -82,19 +83,20 @@ def softmax_np(logits):
     return [float(el) for el in probs]
 
 
-def main(fname):
+def main(fname, num_candidates):
     assert ".json" in fname
 
     with open(fname, "r") as f:
         prediction_data = [json.loads(el) for el in f.readlines() if el.strip() != ""]
 
-    r10 = run_origianl_recall(prediction_data, 10)
+    r10 = run_origianl_recall(prediction_data, num_candidates)
+    
     calibration_error = cal.get_ece(
         [softmax_np(l["pred"]) for l in prediction_data],
         [0 for _ in range(len(prediction_data))],
     )
     brier_score = brier_multi(
-        [[1] + [0 for _ in range(9)] for __ in range(len(prediction_data))],
+        [[1] + [0 for _ in range(num_candidates-1)] for __ in range(len(prediction_data))],
         [softmax_np(l["pred"]) for l in prediction_data],
     )
 
@@ -102,18 +104,14 @@ def main(fname):
     # print("R10@1: {}".format(r10))
     # print("ECE-R10@1: {}".format(calibration_error))
     # print("Brier: {}".format(brier_score))
-
-    # assert not os.path.exists(output_fname)
-    # with open(output_fname, "w") as f:
-    #    f.write("R10@1: {}\n".format(r10))
-    #    f.write("ECE-R10@1: {}\n".format(calibration_error))
+    
     return r10, calibration_error, brier_score
 
 
 def run_origianl_recall(
     prediction_list,
     x: int,
-):
+    ):
     """.
 
     Args:
@@ -132,5 +130,6 @@ def run_origianl_recall(
 
 
 if __name__ == "__main__":
-    dirname = "./result_dir/"
-    main_script(dirname)
+    num_candidates = 10
+    dirname = "./result/"
+    main_script(dirname, num_candidates)
